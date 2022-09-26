@@ -1,0 +1,47 @@
+---
+title: "Project_1"
+author: "Wilson Ng"
+date: "2022-09-25"
+output:
+  pdf_document: 
+    latex_engine: xelatex
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(openintro)
+library(dplyr)
+```
+
+## Importing Data
+
+``` {r}
+tournament_df <- read.csv("https://raw.githubusercontent.com/himalayahall/DATA607/main/Project1/tournamentinfo.txt")
+
+tournament_df <- tournament_df %>%
+  transmute( x = X.........................................................................................)
+
+head(tournament_df)
+```
+## Tidying Data - Separating the "x" column into multiple columns. I named two columns as A and B just as a placeholder to see how the separate function work.
+
+```{r}
+new_df <- tournament_df %>%
+  separate(x, into = c(NA, "Pair_Num", "Player_Name", "Total", "Points", "A", "B", "C", "D"), extra = "merge")
+ 
+head(new_df)
+```
+
+## Dropped the rows with NA. I also dropped the first two rows because they aren't needed for the output.
+```{r}
+new_df <- new_df %>% drop_na()
+new_df <- new_df %>% slice(-1)
+new_df <- new_df %>% slice(-1)
+head(new_df, 10)
+```
+## Unfortunately, this is where I got stuck and couldn't move on to complete this project. 
+
+
+
