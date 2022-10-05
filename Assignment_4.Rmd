@@ -1,0 +1,68 @@
+---
+title: "Assignment_4"
+author: "Wilson Ng"
+date: "2022-10-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tidyr)
+library(ggplot2)
+library(dplyr)
+```
+
+## Getting data from local machine
+
+```{r}
+data <- read.csv("/Users/WN/Desktop/flights.csv")
+
+data
+```
+
+## I don't have any idea what the numbers represent under each "City" column, but I'm going to move forward with the assumption that they are for arrival delays in minutes.
+
+```{r}
+data <- data %>%
+  gather("Los.Angeles", "Phoenix", "San.Diego", "San.Fransisco", "Seattle", key="Arrivals", value="Arr_Delay")
+
+data
+```
+
+## Dropping rows with NA cells and also dropping rows with empty cells on the Distance column.
+
+```{r}
+data <- data %>% drop_na()
+
+data
+```
+
+## Filling in the missing cells for the airline column and renaming the first two columns of the dataframe.
+```{r}
+data <- data %>% filter(data$Arr_Delay != "")
+
+for(row in 1:nrow(data)) {
+  if(row %% 2 == 0) {
+    data$X[row] = data$X[row - 1]
+  }
+}
+
+data
+```
+```{r}
+data <- data %>% rename_at('X', ~'Airlines')
+
+data <- data %>% rename_at('X.1', ~'Status')
+
+data$Arr_Delay <- as.numeric(sub(",", "", data$Arr_Delay, fixed = TRUE))
+
+data
+```
+## Calculating the mean for arr_delay between the two airlines. Judging from the mean - we can conclude that AM WEST has a higher average when it comes to arrival delays in minutes.
+
+```{r calculating the mean for arr_delay between the two airlines}
+data %>%
+  group_by(Airlines) %>%
+  summarise(mean_delay = mean(Arr_Delay))
+```
