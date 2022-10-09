@@ -1,0 +1,226 @@
+---
+title: "DATA607-Project_2"
+author: "Wilson Ng"
+date: "2022-10-04"
+output:
+  html_document: default
+  pdf_document: 
+    latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(stringr)
+```
+
+# First Untidy Data
+
+### Getting data from local machine
+
+**Ran into some trouble importing data initially due to file not being a csv file but a xlxs file. Fixed that really quick by saving the file again with .csv notation**
+
+**Wilson: Looking at the data below. We can see that the price column is in a string format, which might not be ideal if we were going to do any calculations with the price variable. Also, there's duplicate like apple that shows the same price and we can remove one of them since those two rows should be one distinct observation.**
+```{r}
+fruit_data <- read.csv("https://raw.githubusercontent.com/wilsonvetdev/DATA607/main/fruits.csv")
+
+fruit_data
+```
+
+### find and count duplicated rows
+
+```{r}
+duplicates <- fruit_data %>% duplicated() %>% table()
+print(duplicates)
+```
+
+### remove duplicated rows, keep only unique rows
+
+```{r}
+fruit_data <- fruit_data %>% distinct()
+
+fruit_data
+```
+
+### look at the data types of the columns in the data frame: we can see that price has a data type of "chr", which isn't ideal if we wanted to do any math or visualization. We have to first take out the dollar sign character and then transform the column into a numeric column.
+
+```{r}
+str(fruit_data)
+```
+
+```{r}
+updated_fruit_data <- fruit_data  %>%
+  mutate(price=gsub('^\\s*["]', '', gsub('[$",]', '', price)))
+
+updated_fruit_data
+```
+
+### Last step before analysis is to convert the price column into a numeric column.
+
+```{r}
+updated_fruit_data <- updated_fruit_data %>% mutate(price = as.numeric(price))
+
+updated_fruit_data
+```
+
+### We could use this data to find out which fruit has the most calories and it's also the most affordable. Here we see that on the dollar_per_cal column that the apple cost the least when judging by dollar per calorie.
+
+```{r}
+updated_fruit_data <- updated_fruit_data %>% mutate(dollar_per_cal = price/calories)
+
+updated_fruit_data %>%
+  arrange(desc(dollar_per_cal))
+```
+
+# Second Untidy Data
+
+### Getting data from gist provided by Jhalak Das
+
+```{r}
+student_data <- read.csv('https://gist.githubusercontent.com/Kimmirikwa/b69d0ea134820ea52f8481991ffae93e/raw/4db7b1698035ee29885d10e1a59bd902716ae168/student_results.csv')
+
+student_data
+```
+### Tasks requested by Jhalak Das
+
+* The three terms be in the same column called terms or semesters.
+* “sex and age” should be two distinct columns; ‘sex’ and ‘age’.
+* Instead of taking “test number” as variable, we should consider two columns with headers ‘test1’ and ‘test 2’ accordingly.
+* Finally, we should split the entire table into two for two types of observational units: STUDENTS and RESULTS. In the students table, we can keep id, name, phone, sex and age columns. On the results table, we can take the rest; id, terms, test1 and test2 columns. In this way we can join the two tables at any instance with id as primary key.
+
+
+### Separating the sex_and_age column with the separate function
+
+```{r}
+student_data <- separate(student_data, sex.and.age, into = c('sex', 'age'), sep = '_')
+
+student_data
+```
+
+**Wilson: I would argue that we don't create two different columns named 'test1' and 'test2', because those are two distinct observations. They can belong on the same table as is or be split up into two separate tables. I also don't think the table will come out looking good and it will probably result in empty cells between the two columns. **
+
+
+```{r}
+test_1 <- student_data %>% filter(test.number == 'test 1')
+test_2 <- student_data %>% filter(test.number == 'test 2')
+
+test_1
+test_2
+```
+
+**Wilson: I think a good analysis here is to find out if each student did better on test 1 or test 2. Let's go with that!**
+
+**Wilson: We can see that everyone with the exception of Linda(dropped one point) have improved a little bit in test 2.**
+
+```{r}
+tests_average_1 <- 
+  test_1 %>%
+  group_by(name) %>%
+  summarise(mean_grade_1 = mean(term.1, term.2, term.3))
+
+tests_average_2 <-
+  test_2 %>%
+  group_by(name) %>%
+  summarise(mean_grade_2 = mean(term.1, term.2, term.3))
+
+merge(tests_average_1, tests_average_2)
+```
+
+
+# Third Untidy Data
+
+## Analysis requested by Enid Roman:
+
+*Compare salaries by gender and years of experience.
+*Compare salaries compare for the same role in different locations.
+
+```{r}
+managers <- read.csv('https://raw.githubusercontent.com/wilsonvetdev/DATA607/main/managers.csv')
+
+names(managers)
+```
+
+## Clean up the column names and only take what I think i will need.
+
+* The most important ones are probably job_title, years_of_experience, country, city, salary, and gender.
+* I'm going to only look at cities in the US for simplicity, so I will be filtering out the rest of the observations that aren't US.
+
+```{r}
+managers <- managers %>%
+  transmute(
+    age = How.old.are.you.,
+    job_title = Job.title,
+    currency = Please.indicate.the.currency,
+    salary = What.is.your.annual.salary...You.ll.indicate.the.currency.in.a.later.question..If.you.are.part.time.or.hourly..please.enter.an.annualized.equivalent....what.you.would.earn.if.you.worked.the.job.40.hours.a.week..52.weeks.a.year..,
+    industry = What.industry.do.you.work.in.,
+    country = What.country.do.you.work.in.,
+    city = What.city.do.you.work.in.,
+    gender = What.is.your.gender.,
+    years_of_experience = How.many.years.of.professional.work.experience.do.you.have.overall.,
+  )
+
+head(managers)
+```
+## I noticed there were job titles that didn't have the word manager, so let's filter out those observations.
+
+** trimming leading and trailing spaces as well because I realized the filter wasn't working as expected. "United Kingdom" cell wasn't getting filtered out in the beginning so I suspect it was actually "United Kingdom ".
+
+```{r}
+managers$job_title <- trimws(managers$job_title, which = c("both"))
+managers$country <- trimws(managers$country, which = c("both"))
+
+managers <- managers %>% filter(grepl("manager", job_title))
+
+managers <- filter(managers, grepl("^[uU]", country))
+
+managers <- filter(managers, !grepl("^[uU]", country) | !grepl("^[uU].?[kK].?", country)) %>% filter(!grepl("[my]$", country))
+
+distinct(managers, country)
+```
+
+## Compare salaries compare for the same role in different locations.
+
+* There's over 300 distinct job titles, but I think looking at a few will be easier to tackle.
+* Let's find out which roles have more responses compared to the rest.
+* Looking at the table below - I am personally interested in analyzing project manager since it has the most observations.
+
+```{r}
+managers %>% group_by(job_title) %>% summarize(count = n()) %>% arrange(desc(count))
+```
+## Tidying the salary column and coverting it to a numeric column.
+
+```{r}
+project_managers <- managers %>% filter(job_title == "Project manager")
+
+project_managers <- project_managers %>%
+  mutate(salary=gsub('^\\s*["]', '', gsub('[$",]', '', salary)))
+
+project_managers <- project_managers %>% mutate(salary = as.numeric(salary))
+
+project_managers
+```
+## This visualization is helpful, but the data has so little responses for project managers(even though it has the most responses compared to other roles) that makes it difficult to draw any conclusions. It took quite some time to tidy this data set in order for any type of analysis.
+
+```{r}
+viz <- ggplot(data = project_managers, aes(x = city, y = salary)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, size = 8))
+
+viz
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
