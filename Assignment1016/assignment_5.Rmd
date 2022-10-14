@@ -1,0 +1,44 @@
+---
+title: "Assignment_5"
+author: "Wilson Ng"
+date: "2022-10-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(jsonlite)
+library(rvest)
+library(dplyr)
+library(XML)
+library(methods)
+library(RCurl)
+```
+
+```{r books-json}
+raw_json <- fromJSON("https://raw.githubusercontent.com/wilsonvetdev/DATA607/main/Assignment1016/books.json")
+
+raw_json
+```
+
+```{r books-html}
+page <- read_html("https://raw.githubusercontent.com/wilsonvetdev/DATA607/main/Assignment1016/books.html") 
+
+page %>% html_table(fill=T) %>% as.data.frame()
+
+```
+
+```{r books-xml}
+xml_data <- getURL("https://raw.githubusercontent.com/wilsonvetdev/DATA607/main/Assignment1016/books.xml")
+
+doc <- xmlParse(xml_data) 
+
+xml_df <- xmlToDataFrame(doc)
+
+xml_df
+```
+
+# The dataframes are identical - they each have three columns and three rows housing title, author, and year published data.
+
+
+
