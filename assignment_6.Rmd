@@ -1,0 +1,41 @@
+---
+title: "assignment_6"
+author: "Wilson Ng"
+date: "2022-10-29"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(httr)
+library(jsonlite)
+library(dplyr)
+library(rjson)
+library(tibble)
+library(tidyr)
+library(plyr)
+```
+
+## Assignment 6 - Spent a few hours trying to transform the data frame, but couldn't get it to work. Right now it's way too wide(430 columns) for it to be useful.
+
+```{r sending-request}
+response <- GET("https://api.nytimes.com/svc/books/v3/lists.json?list=hardcover-fiction&api-key=Mf6q45GOp16AVREtOZMcsnFIO0jcUHcm")
+
+data = fromJSON(rawToChar(response$content))
+
+content <- response$content
+
+char <- rawToChar(content)
+
+books_text <- fromJSON(char)
+
+lists <- books_text$results
+
+list_df <- as.data.frame(lists)
+
+list_df
+```
+
